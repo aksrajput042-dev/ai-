@@ -1,0 +1,1483 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ResQverse AI — Autonomous Disaster Relief & Crisis Command</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            slate: {
+              850: '#151e2e',
+              925: '#0b101b',
+              950: '#070a12',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom subtle grid and animations for high-contrast command aesthetic */
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #070a12;
+      color: #f1f5f9;
+    }
+    .tactical-grid {
+      background-size: 28px 28px;
+      background-image: 
+        linear-gradient(to right, rgba(56, 189, 248, 0.06) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(56, 189, 248, 0.06) 1px, transparent 1px);
+    }
+    /* Low Connectivity Mode overrides */
+    body.low-conn * {
+      animation: none !important;
+      transition: none !important;
+      box-shadow: none !important;
+    }
+    body.low-conn .tactical-grid {
+      background-image: none !important;
+    }
+    body.low-conn .heavy-visual {
+      display: none !important;
+    }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0b101b;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #334155;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col bg-slate-950 text-slate-100 selection:bg-rose-500/30 selection:text-rose-200">
+
+  <!-- Toast Notification Container (Replaces alert()) -->
+  <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
+
+  <!-- Feature #6: Low Connectivity Mode Banner -->
+  <div id="low-conn-banner" class="hidden bg-amber-500 text-slate-950 text-xs font-bold py-1.5 px-4 text-center tracking-wide border-b border-amber-600">
+    ⚡ LOW CONNECTIVITY MODE ACTIVE — ULTRA-LIGHT TEXT ENGINE • AUTO-COMPRESSION & OFFLINE QUEUE SYNC READY (SAVING 84% BANDWIDTH)
+  </div>
+
+  <!-- Persistent Top Command Header -->
+  <header class="sticky top-0 z-40 bg-slate-925/95 backdrop-blur-md border-b border-slate-800/90">
+    <div class="max-w-[1440px] mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+      
+      <!-- Brand Logo & Emergency Pulse -->
+      <div class="flex items-center gap-3">
+        <div class="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-rose-600 to-orange-600 text-white shadow-lg shadow-rose-600/20">
+          <i data-lucide="shield-alert" class="w-5 h-5"></i>
+          <span class="pulse-dot absolute -top-1 -right-1 flex h-3 w-3">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-3 w-3 bg-rose-500 border-2 border-slate-950"></span>
+          </span>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-lg sm:text-xl font-extrabold tracking-tight text-white">ResQverse <span class="text-rose-500">AI</span></h1>
+            <span class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+              LIVE OPS • NCR-DELHI
+            </span>
+          </div>
+          <p class="text-[11px] text-slate-400 hidden sm:block" data-i18n="tagline">Autonomous Crisis Intelligence & Resource Orchestration</p>
+        </div>
+      </div>
+
+      <!-- 3-Panel Switcher Navigation -->
+      <nav class="order-3 lg:order-2 w-full lg:w-auto flex items-center justify-center bg-slate-900 p-1 rounded-xl border border-slate-800">
+        <button onclick="switchPanel('user')" id="tab-user" class="panel-tab flex-1 lg:flex-initial flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-rose-600 text-white shadow">
+          <i data-lucide="radio" class="w-4 h-4"></i>
+          <span data-i18n="nav_user">1. User SOS Panel</span>
+        </button>
+        <button onclick="switchPanel('supplier')" id="tab-supplier" class="panel-tab flex-1 lg:flex-initial flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all text-slate-400 hover:text-white">
+          <i data-lucide="truck" class="w-4 h-4"></i>
+          <span data-i18n="nav_supplier">2. Supplier Panel</span>
+        </button>
+        <button onclick="switchPanel('coordinator')" id="tab-coordinator" class="panel-tab flex-1 lg:flex-initial flex items-center justify-center gap-2 px-3.5 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all text-slate-400 hover:text-white">
+          <i data-lucide="cpu" class="w-4 h-4"></i>
+          <span data-i18n="nav_coordinator">3. Coordinator AI</span>
+        </button>
+      </nav>
+
+      <!-- Global Controls: Language Bridge (#5) & Low Connectivity Mode (#6) -->
+      <div class="order-2 lg:order-3 flex items-center gap-2 sm:gap-3">
+        <!-- Feature #5: Language Bridge Selector -->
+        <div class="flex items-center gap-1.5 bg-slate-900 border border-slate-800 rounded-xl px-2.5 py-1.5" title="Feature #5: AI Language Bridge">
+          <i data-lucide="languages" class="w-4 h-4 text-sky-400 shrink-0"></i>
+          <select id="global-lang" onchange="changeLanguage(this.value)" class="bg-transparent text-xs font-semibold text-slate-200 focus:outline-none cursor-pointer">
+            <option value="en" class="bg-slate-900">English (EN)</option>
+            <option value="hi" class="bg-slate-900">हिन्दी (HI)</option>
+            <option value="es" class="bg-slate-900">Español (ES)</option>
+            <option value="ar" class="bg-slate-900">العربية (AR)</option>
+          </select>
+        </div>
+
+        <!-- Feature #6: Low Connectivity Mode Toggle -->
+        <button onclick="toggleLowConnectivity()" id="low-conn-btn" class="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-slate-800 bg-slate-900 hover:border-amber-500/50 text-xs font-semibold text-slate-300 transition-all" title="Feature #6: Toggle Low Bandwidth / Offline-Ready Mode">
+          <i data-lucide="wifi" id="low-conn-icon" class="w-4 h-4 text-emerald-400"></i>
+          <span class="hidden md:inline" id="low-conn-label">Normal Signal</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Workspace Container -->
+  <main class="flex-1 max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-6">
+
+    <!-- ===================================================================== -->
+    <!-- PANEL 1: USER PANEL (CITIZEN SOS & NEED SUBMISSION)                   -->
+    <!-- ===================================================================== -->
+    <section id="panel-user" class="panel-view space-y-6">
+      <!-- Top Hero Banner -->
+      <div class="bg-gradient-to-r from-rose-950/60 via-slate-900 to-slate-900 border border-rose-500/30 rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div class="space-y-1">
+          <div class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 text-xs font-semibold">
+            <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+            <span data-i18n="user_badge">CITIZEN EMERGENCY SOS PORTAL</span>
+          </div>
+          <h2 class="text-xl sm:text-2xl font-bold text-white" data-i18n="user_title">Broadcast Emergency Distress & AI Need Analysis</h2>
+          <p class="text-sm text-slate-300 max-w-2xl" data-i18n="user_subtitle">Type your situation in any language. ResQverse AI automatically translates, detects medical/food/rescue needs, and dispatches the nearest verified relief unit.</p>
+        </div>
+        <div class="flex items-center gap-3 bg-slate-950/80 border border-slate-800 px-4 py-2.5 rounded-xl shrink-0">
+          <i data-lucide="satellite" class="w-5 h-5 text-emerald-400"></i>
+          <div class="text-xs">
+            <div class="text-slate-400">GPS Telemetry</div>
+            <div class="font-mono font-semibold text-emerald-400" id="user-gps-coords">28.6139° N, 77.2090° E</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Left Column: SOS Distress Submission Form -->
+        <div class="lg:col-span-7 bg-slate-900/90 border border-slate-800 rounded-2xl p-5 sm:p-6 space-y-5">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+            <h3 class="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+              <i data-lucide="siren" class="w-5 h-5 text-rose-500"></i>
+              <span data-i18n="sos_form_header">Submit Live Distress Signal</span>
+            </h3>
+            <button type="button" onclick="fillSampleSOS()" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-sky-400 border border-slate-700 transition">
+              + Fill Hindi/Crisis Demo
+            </button>
+          </div>
+
+          <form id="sos-form" onsubmit="handleSOSSubmit(event)" class="space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Citizen / Reporter Name</label>
+                <input type="text" id="sos-name" required placeholder="e.g., Aarav Sharma" class="w-full bg-slate-950 border border-slate-800 focus:border-rose-500 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Sector / Location Landmark</label>
+                <div class="flex gap-2">
+                  <select id="sos-zone" class="w-full bg-slate-950 border border-slate-800 focus:border-rose-500 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none">
+                    <option value="Zone A — Yamuna Floodplain East">Zone A — Yamuna Floodplain East</option>
+                    <option value="Zone B — Karol Bagh Central">Zone B — Karol Bagh Central</option>
+                    <option value="Zone C — Okhla Industrial South">Zone C — Okhla Industrial South</option>
+                    <option value="Zone D — Rohini Sector 14 North">Zone D — Rohini Sector 14 North</option>
+                  </select>
+                  <button type="button" onclick="detectGPS()" title="Auto-detect GPS" class="px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-sky-400 border border-slate-700 shrink-0">
+                    <i data-lucide="crosshair" class="w-4 h-4"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">People Affected</label>
+                <input type="number" id="sos-people" min="1" max="500" value="6" required class="w-full bg-slate-950 border border-slate-800 focus:border-rose-500 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Reported Urgency</label>
+                <select id="sos-urgency" onchange="runLiveAINeedDetector()" class="w-full bg-slate-950 border border-slate-800 focus:border-rose-500 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none">
+                  <option value="CRITICAL">CRITICAL — Immediate Life Threat</option>
+                  <option value="HIGH">HIGH — Urgent Medical / Food / Shelter</option>
+                  <option value="MEDIUM">MEDIUM — Essential Relief Needed</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Free-text emergency description with live AI Need Detector + Language Bridge -->
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Emergency Description (Any Language: English, Hindi, Spanish, Arabic)</label>
+                <span class="text-[11px] font-mono text-sky-400 flex items-center gap-1">
+                  <i data-lucide="sparkles" class="w-3 h-3"></i> Live AI Parsing Active
+                </span>
+              </div>
+              <textarea id="sos-message" rows="3" required oninput="runLiveAINeedDetector()" placeholder="Describe what happened, injuries, trapped people, or supplies needed (e.g., 'बाढ़ का पानी घर में घुस गया है, 2 बुजुर्ग और एक छोटा बच्चा फंसा है, पीने का पानी और इंसुलिन चाहिए')..." class="w-full bg-slate-950 border border-slate-800 focus:border-rose-500 rounded-xl p-3.5 text-sm text-white focus:outline-none"></textarea>
+            </div>
+
+            <button type="submit" class="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-rose-600 to-orange-600 hover:from-rose-500 hover:to-orange-500 text-white font-bold text-sm shadow-lg shadow-rose-600/25 flex items-center justify-center gap-2 transition transform active:scale-[0.99]">
+              <i data-lucide="send" class="w-4 h-4"></i>
+              <span data-i18n="btn_send_sos">BROADCAST SOS TO RESQVERSE COMMAND</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- Right Column: Feature #1 (AI Need Detector) & Feature #5 (Language Bridge) Live Preview -->
+        <div class="lg:col-span-5 space-y-6">
+          <!-- Feature #1 & #5 Live Analysis Card -->
+          <div class="bg-slate-900/90 border border-sky-500/30 rounded-2xl p-5 space-y-4">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="p-2 rounded-lg bg-sky-500/10 text-sky-400">
+                  <i data-lucide="brain-circuit" class="w-5 h-5"></i>
+                </span>
+                <div>
+                  <h3 class="text-sm font-bold text-white">Feature #1: AI Need Detector</h3>
+                  <p class="text-[11px] text-slate-400">Real-time NLP entity, triage & vulnerability extraction</p>
+                </div>
+              </div>
+              <span id="ai-severity-badge" class="px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                STANDBY
+              </span>
+            </div>
+
+            <!-- Feature #5: Language Bridge Output -->
+            <div class="bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-1.5">
+              <div class="flex items-center justify-between text-[11px]">
+                <span class="font-semibold text-sky-400 flex items-center gap-1">
+                  <i data-lucide="globe" class="w-3.5 h-3.5"></i> Feature #5: Language Bridge Translation
+                </span>
+                <span id="ai-detected-lang" class="font-mono text-slate-400">Auto-Detect</span>
+              </div>
+              <p id="ai-translated-text" class="text-xs text-slate-300 italic">
+                Start typing an emergency message on the left to see real-time command translation and resource extraction...
+              </p>
+            </div>
+
+            <!-- Extracted Resource Needs -->
+            <div>
+              <div class="text-xs font-semibold text-slate-400 mb-2">Detected Resource Categories</div>
+              <div id="ai-extracted-tags" class="flex flex-wrap gap-2">
+                <span class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-400 text-xs">Awaiting input...</span>
+              </div>
+            </div>
+
+            <!-- Vulnerable Groups Detected -->
+            <div>
+              <div class="text-xs font-semibold text-slate-400 mb-2">Vulnerable Population Flags</div>
+              <div id="ai-vulnerable-tags" class="flex flex-wrap gap-2">
+                <span class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-400 text-xs">None flagged yet</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Citizen's Live Submitted SOS Tracker -->
+          <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 space-y-3">
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                <i data-lucide="activity" class="w-4 h-4 text-emerald-400"></i>
+                Your Active SOS Beacon Status
+              </h3>
+              <span class="text-xs font-mono text-slate-400" id="user-sos-count">0 Active</span>
+            </div>
+            <div id="user-sos-tracker-list" class="space-y-2.5 max-h-[260px] overflow-y-auto pr-1">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- PANEL 2: SUPPLIER PANEL (REGISTRATION FORM + INVENTORY & DISPATCH)    -->
+    <!-- ===================================================================== -->
+    <section id="panel-supplier" class="panel-view hidden space-y-6">
+      <!-- Supplier Header Banner -->
+      <div class="bg-gradient-to-r from-emerald-950/60 via-slate-900 to-slate-900 border border-emerald-500/30 rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div class="space-y-1">
+          <div class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-semibold">
+            <i data-lucide="package-check" class="w-3.5 h-3.5"></i>
+            <span>RELIEF VENDORS, NGOS & LOGISTICS NETWORK</span>
+          </div>
+          <h2 class="text-xl sm:text-2xl font-bold text-white">Supplier Onboarding, Live Inventory & Dispatch Orders</h2>
+          <p class="text-sm text-slate-300">Register new relief organizations into the AI Matchmaker grid, manage emergency stock, and accept incoming Coordinator dispatch orders.</p>
+        </div>
+        <div class="flex items-center gap-4 bg-slate-950/80 border border-slate-800 px-4 py-3 rounded-xl shrink-0">
+          <div>
+            <div class="text-[11px] text-slate-400 uppercase">Verified Hubs</div>
+            <div class="text-xl font-extrabold text-emerald-400 font-mono" id="supplier-total-count">4</div>
+          </div>
+          <div class="h-8 w-px bg-slate-800"></div>
+          <div>
+            <div class="text-[11px] text-slate-400 uppercase">Pending Dispatches</div>
+            <div class="text-xl font-extrabold text-amber-400 font-mono" id="supplier-pending-orders">1</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- LEFT COLUMN (5 cols): DEDICATED SUPPLIER REGISTRATION FORM -->
+        <div class="lg:col-span-5 bg-slate-900/95 border border-emerald-500/40 rounded-2xl p-5 sm:p-6 space-y-5 shadow-xl shadow-emerald-950/20">
+          <div class="border-b border-slate-800 pb-4">
+            <div class="flex items-center justify-between">
+              <h3 class="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                <i data-lucide="building-2" class="w-5 h-5 text-emerald-400"></i>
+                <span>Supplier & NGO Registration Form</span>
+              </h3>
+              <span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[10px] font-mono font-bold border border-emerald-500/30">
+                INSTANT AI SYNC
+              </span>
+            </div>
+            <p class="text-xs text-slate-400 mt-1">Register your organization to immediately join the Smart Resource Matcher pool.</p>
+          </div>
+
+          <form id="supplier-reg-form" onsubmit="handleSupplierRegister(event)" class="space-y-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Organization / Vendor Name *</label>
+              <input type="text" id="sup-org-name" required placeholder="e.g., RapidRelief Medical Trust / Khalsa Aid Hub" class="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none" />
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div>
+                <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Contact Person *</label>
+                <input type="text" id="sup-contact" required placeholder="e.g., Dr. Meera Nair" class="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Phone / Satellite ID *</label>
+                <input type="text" id="sup-phone" required placeholder="e.g., +91-98110-44210" class="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div>
+                <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Primary Resource Category *</label>
+                <select id="sup-category" class="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none">
+                  <option value="Medical">Medical & Trauma Kits</option>
+                  <option value="Food & Water">Food & Clean Water</option>
+                  <option value="Shelter">Emergency Shelter & Blankets</option>
+                  <option value="Transport & Rescue">Transport, Boats & Rescue</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Available Stock / Units *</label>
+                <input type="number" id="sup-stock" min="10" max="50000" value="250" required class="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div>
+                <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Base Hub Location *</label>
+                <select id="sup-zone" class="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none">
+                  <option value="Zone A — Yamuna Floodplain East">Zone A — Yamuna East</option>
+                  <option value="Zone B — Karol Bagh Central">Zone B — Karol Bagh Central</option>
+                  <option value="Zone C — Okhla Industrial South">Zone C — Okhla South</option>
+                  <option value="Zone D — Rohini Sector 14 North">Zone D — Rohini North</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Dispatch Readiness *</label>
+                <select id="sup-readiness" class="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none">
+                  <option value="Immediate (< 15 mins)">Immediate (&lt; 15 mins)</option>
+                  <option value="Standby (30 mins)">Standby (30 mins)</option>
+                  <option value="Scheduled (1-2 hrs)">Scheduled (1-2 hrs)</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Specific Supplies / Fleet Details</label>
+              <input type="text" id="sup-details" placeholder="e.g., Insulin vials, O2 cylinders, 4x4 ambulances, drinking water cans" class="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none" />
+            </div>
+
+            <button type="submit" class="w-full py-3 px-5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 transition">
+              <i data-lucide="user-plus" class="w-4 h-4"></i>
+              <span>Register Supplier & Activate Live Inventory</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- RIGHT COLUMN (7 cols): INCOMING DISPATCH ORDERS & ACTIVE SUPPLIER DIRECTORY -->
+        <div class="lg:col-span-7 space-y-6">
+          <!-- Incoming Coordinator Dispatch Requests -->
+          <div class="bg-slate-900/90 border border-amber-500/30 rounded-2xl p-5 space-y-4">
+            <div class="flex items-center justify-between">
+              <h3 class="text-base font-bold text-white flex items-center gap-2">
+                <i data-lucide="bell-ring" class="w-5 h-5 text-amber-400"></i>
+                <span>Assigned Dispatch Orders from Command Center</span>
+              </h3>
+              <span class="text-xs font-mono px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                Action Required
+              </span>
+            </div>
+            <div id="supplier-dispatch-list" class="space-y-3">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+
+          <!-- Active Registered Supplier Directory & Stock -->
+          <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 space-y-4">
+            <div class="flex items-center justify-between">
+              <h3 class="text-base font-bold text-white flex items-center gap-2">
+                <i data-lucide="warehouse" class="w-5 h-5 text-sky-400"></i>
+                <span>Live Registered Supplier Directory & Inventory</span>
+              </h3>
+              <span class="text-xs text-slate-400">Synced with AI Matcher</span>
+            </div>
+            <div id="supplier-directory-list" class="grid grid-cols-1 md:grid-cols-2 gap-3.5 max-h-[380px] overflow-y-auto pr-1">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================================================================== -->
+    <!-- PANEL 3: COORDINATOR PANEL (COMMAND CENTER & AI OPERATIONS)           -->
+    <!-- ===================================================================== -->
+    <section id="panel-coordinator" class="panel-view hidden space-y-6">
+      
+      <!-- Feature #4: Live Coordination Dashboard KPIs -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex items-center justify-between">
+          <div>
+            <p class="text-xs font-semibold text-slate-400 uppercase">Active SOS Cases</p>
+            <p class="text-2xl sm:text-3xl font-extrabold text-white font-mono mt-1" id="kpi-active-sos">0</p>
+            <p class="text-[11px] text-rose-400 mt-1 flex items-center gap-1">
+              <i data-lucide="trending-up" class="w-3 h-3"></i> Live Telemetry
+            </p>
+          </div>
+          <div class="p-3 rounded-xl bg-rose-500/10 text-rose-400 border border-rose-500/20">
+            <i data-lucide="alert-octagon" class="w-6 h-6"></i>
+          </div>
+        </div>
+
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex items-center justify-between">
+          <div>
+            <p class="text-xs font-semibold text-slate-400 uppercase">Unmet Resource Gaps</p>
+            <p class="text-2xl sm:text-3xl font-extrabold text-amber-400 font-mono mt-1" id="kpi-unmet-gaps">0</p>
+            <p class="text-[11px] text-amber-300 mt-1">AI Deficit Alerts</p>
+          </div>
+          <div class="p-3 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+            <i data-lucide="shield-question" class="w-6 h-6"></i>
+          </div>
+        </div>
+
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex items-center justify-between">
+          <div>
+            <p class="text-xs font-semibold text-slate-400 uppercase">Verified Suppliers</p>
+            <p class="text-2xl sm:text-3xl font-extrabold text-emerald-400 font-mono mt-1" id="kpi-suppliers">0</p>
+            <p class="text-[11px] text-emerald-300 mt-1">Ready for Dispatch</p>
+          </div>
+          <div class="p-3 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <i data-lucide="truck" class="w-6 h-6"></i>
+          </div>
+        </div>
+
+        <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 flex items-center justify-between">
+          <div>
+            <p class="text-xs font-semibold text-slate-400 uppercase">Avg AI Match Time</p>
+            <p class="text-2xl sm:text-3xl font-extrabold text-sky-400 font-mono mt-1">1.4s</p>
+            <p class="text-[11px] text-sky-300 mt-1">98.4% Accuracy</p>
+          </div>
+          <div class="p-3 rounded-xl bg-sky-500/10 text-sky-400 border border-sky-500/20">
+            <i data-lucide="zap" class="w-6 h-6"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Middle Row: Tactical Sector Map (#4) + Unmet Need Detector (#2) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Feature #4: Tactical Zone Grid & Live Distress Feed -->
+        <div class="lg:col-span-7 bg-slate-900/90 border border-slate-800 rounded-2xl p-5 space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h3 class="text-base font-bold text-white flex items-center gap-2">
+                <i data-lucide="radar" class="w-5 h-5 text-sky-400"></i>
+                <span>Feature #4: Live Coordination Tactical Grid</span>
+              </h3>
+              <p class="text-xs text-slate-400">Click any SOS beacon to inspect its Case Timeline (#7) & AI Supplier Match (#3)</p>
+            </div>
+            <div class="flex items-center gap-3 text-[11px]">
+              <span class="flex items-center gap-1 text-rose-400"><span class="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block"></span> Critical SOS</span>
+              <span class="flex items-center gap-1 text-emerald-400"><span class="w-2.5 h-2.5 rounded-sm bg-emerald-500 inline-block"></span> Supplier Hub</span>
+            </div>
+          </div>
+
+          <!-- Interactive Sector Map Visualization (Hidden automatically in Low Connectivity Mode via .heavy-visual) -->
+          <div id="tactical-map-box" class="heavy-visual relative h-64 rounded-xl bg-slate-950 border border-slate-800 tactical-grid overflow-hidden p-4">
+            <!-- Quadrant Dividers -->
+            <div class="absolute inset-0 grid grid-cols-2 grid-rows-2 pointer-events-none">
+              <div class="border-r border-b border-slate-800/80 p-2.5">
+                <span class="text-[10px] font-mono uppercase tracking-wider text-slate-500">SECTOR A • YAMUNA EAST</span>
+              </div>
+              <div class="border-b border-slate-800/80 p-2.5 text-right">
+                <span class="text-[10px] font-mono uppercase tracking-wider text-slate-500">SECTOR B • KAROL BAGH CENTRAL</span>
+              </div>
+              <div class="border-r border-slate-800/80 p-2.5 flex items-end">
+                <span class="text-[10px] font-mono uppercase tracking-wider text-slate-500">SECTOR C • OKHLA SOUTH</span>
+              </div>
+              <div class="p-2.5 flex items-end justify-end">
+                <span class="text-[10px] font-mono uppercase tracking-wider text-slate-500">SECTOR D • ROHINI NORTH</span>
+              </div>
+            </div>
+            <!-- Dynamic Pins Container -->
+            <div id="tactical-pins-layer" class="relative w-full h-full"></div>
+          </div>
+
+          <!-- Live Incoming Distress Queue -->
+          <div class="space-y-2">
+            <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Incoming SOS Distress Queue (Select Case to Manage)</div>
+            <div id="coordinator-sos-list" class="space-y-2.5 max-h-[260px] overflow-y-auto pr-1">
+              <!-- Populated dynamically -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Feature #2: Unmet Need Detector -->
+        <div class="lg:col-span-5 bg-slate-900/90 border border-amber-500/30 rounded-2xl p-5 flex flex-col justify-between space-y-4">
+          <div class="space-y-4">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="p-2 rounded-lg bg-amber-500/15 text-amber-400">
+                  <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                </span>
+                <div>
+                  <h3 class="text-base font-bold text-white">Feature #2: Unmet Need Detector</h3>
+                  <p class="text-xs text-slate-400">AI supply-vs-demand deficit & underserved zone scanner</p>
+                </div>
+              </div>
+              <span class="px-2 py-0.5 rounded bg-rose-500/15 text-rose-400 text-[10px] font-mono font-bold border border-rose-500/30">
+                REAL-TIME GAP AI
+              </span>
+            </div>
+
+            <div id="unmet-needs-list" class="space-y-3">
+              <!-- Populated dynamically based on SOS demand vs Supplier inventory -->
+            </div>
+          </div>
+
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-xs text-slate-400 flex items-center justify-between">
+            <span>Auto-recalculates when new SOS or Supplier stock arrives.</span>
+            <button onclick="escalateAllUnmet()" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold transition shrink-0">
+              Broadcast Surge Alert
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Row: Feature #3 (Smart Resource Matcher) & Feature #7 (Case Timeline) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Feature #3: Smart Resource Matcher -->
+        <div class="lg:col-span-6 bg-slate-900/90 border border-indigo-500/30 rounded-2xl p-5 space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3.5">
+            <div class="flex items-center gap-2.5">
+              <span class="p-2 rounded-lg bg-indigo-500/15 text-indigo-400">
+                <i data-lucide="git-merge" class="w-5 h-5"></i>
+              </span>
+              <div>
+                <h3 class="text-base font-bold text-white">Feature #3: Smart Resource Matcher</h3>
+                <p class="text-xs text-slate-400">AI pairing by proximity, category fit, stock & severity</p>
+              </div>
+            </div>
+            <span id="matcher-selected-case-badge" class="text-xs font-mono px-2.5 py-1 rounded-lg bg-slate-800 text-indigo-300">
+              Case #SOS-101
+            </span>
+          </div>
+
+          <div id="smart-matcher-results" class="space-y-3">
+            <!-- Populated dynamically for selected SOS case -->
+          </div>
+        </div>
+
+        <!-- Feature #7: Case Timeline & Audit Trail -->
+        <div class="lg:col-span-6 bg-slate-900/90 border border-emerald-500/30 rounded-2xl p-5 space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-3.5">
+            <div class="flex items-center gap-2.5">
+              <span class="p-2 rounded-lg bg-emerald-500/15 text-emerald-400">
+                <i data-lucide="history" class="w-5 h-5"></i>
+              </span>
+              <div>
+                <h3 class="text-base font-bold text-white">Feature #7: Case Timeline & Audit Trail</h3>
+                <p class="text-xs text-slate-400">End-to-end chronological lifecycle & field verification</p>
+              </div>
+            </div>
+            <span id="timeline-case-status" class="text-xs font-mono px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+              IN PROGRESS
+            </span>
+          </div>
+
+          <!-- Timeline Steps -->
+          <div id="case-timeline-container" class="space-y-3 max-h-[260px] overflow-y-auto pr-2">
+            <!-- Populated dynamically -->
+          </div>
+
+          <!-- Coordinator Add Update Input -->
+          <form onsubmit="handleAddTimelineNote(event)" class="flex gap-2 pt-2 border-t border-slate-800">
+            <input type="text" id="timeline-note-input" placeholder="Log field update (e.g., Relief boat reached Sector A rooftop)..." class="flex-1 bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none" />
+            <button type="submit" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition shrink-0">
+              + Log Update
+            </button>
+          </form>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- ======================================================================= -->
+  <!-- APPLICATION LOGIC & STATE ORCHESTRATION                                 -->
+  <!-- ======================================================================= -->
+  <script>
+    // -------------------------------------------------------------------------
+    // 1. GLOBAL STATE & REALISTIC PRE-LOADED CRISIS SCENARIOS (DELHI / NCR)
+    // -------------------------------------------------------------------------
+    let currentPanel = 'user';
+    let currentLang = 'en';
+    let lowConnectivity = false;
+    let selectedCaseId = 'SOS-101';
+
+    // Multi-language dictionary for Feature #5: Language Bridge
+    const i18n = {
+      en: {
+        tagline: "Autonomous Crisis Intelligence & Resource Orchestration",
+        nav_user: "1. User SOS Panel",
+        nav_supplier: "2. Supplier Panel",
+        nav_coordinator: "3. Coordinator AI",
+        user_badge: "CITIZEN EMERGENCY SOS PORTAL",
+        user_title: "Broadcast Emergency Distress & AI Need Analysis",
+        user_subtitle: "Type your situation in any language. ResQverse AI automatically translates, detects medical/food/rescue needs, and dispatches the nearest verified relief unit.",
+        sos_form_header: "Submit Live Distress Signal",
+        btn_send_sos: "BROADCAST SOS TO RESQVERSE COMMAND"
+      },
+      hi: {
+        tagline: "स्वायत्त आपदा खुफिया और संसाधन समन्वय प्रणाली",
+        nav_user: "1. नागरिक SOS पैनल",
+        nav_supplier: "2. आपूर्तिकर्ता पैनल",
+        nav_coordinator: "3. समन्वयक AI केंद्र",
+        user_badge: "नागरिक आपातकालीन SOS पोर्टल",
+        user_title: "आपातकालीन सहायता संदेश और AI आवश्यकता विश्लेषण",
+        user_subtitle: "अपनी स्थिति किसी भी भाषा में लिखें। ResQverse AI स्वतः अनुवाद करता है, चिकित्सा/भोजन/बचाव की जरूरतों को पहचानता है और निकटतम राहत दल भेजता है।",
+        sos_form_header: "लाइव संकट संदेश भेजें",
+        btn_send_sos: "RESQVERSE कमांड को SOS भेजें"
+      },
+      es: {
+        tagline: "Inteligencia Autónoma de Crisis y Orquestación de Recursos",
+        nav_user: "1. Panel SOS Ciudadano",
+        nav_supplier: "2. Panel de Proveedores",
+        nav_coordinator: "3. Coordinador IA",
+        user_badge: "PORTAL DE EMERGENCIA SOS CIUDADANO",
+        user_title: "Transmitir Auxilio de Emergencia y Análisis IA",
+        user_subtitle: "Escriba su situación en cualquier idioma. ResQverse AI traduce automáticamente, detecta necesidades médicas/alimentos/rescate y despacha ayuda.",
+        sos_form_header: "Enviar Señal de Auxilio en Vivo",
+        btn_send_sos: "TRANSMITIR SOS AL COMANDO RESQVERSE"
+      },
+      ar: {
+        tagline: "الذكاء الاصطناعي لإدارة الأزمات وتنسيق الإغاثة",
+        nav_user: "1. بوابة استغاثة المواطنين",
+        nav_supplier: "2. بوابة الموردين",
+        nav_coordinator: "3. مركز القيادة الذكي",
+        user_badge: "بوابة الطوارئ والاستغاثة للمواطنين",
+        user_title: "إرسال نداء استغاثة وتحليل الاحتياجات بالذكاء الاصطناعي",
+        user_subtitle: "اكتب حالتك بأي لغة. يقوم الذكاء الاصطناعي بالترجمة الفورية وتحديد الاحتياجات الطبية والغذائية وإرسال أقرب فريق إغاثة.",
+        sos_form_header: "إرسال إشارة استغاثة مباشرة",
+        btn_send_sos: "إرسال نداء الاستغاثة إلى مركز القيادة"
+      }
+    };
+
+    // Pre-loaded Suppliers (Including capacity, zone, readiness)
+    let suppliers = [
+      {
+        id: 'SUP-01',
+        orgName: 'Apollo Rapid Trauma & MedUnit',
+        contact: 'Dr. Vikram Sethi',
+        phone: '+91-98100-11201',
+        category: 'Medical',
+        stock: 420,
+        zone: 'Zone B — Karol Bagh Central',
+        readiness: 'Immediate (< 15 mins)',
+        details: 'Insulin kits, trauma dressings, portable oxygen',
+        coords: { x: 64, y: 28 }
+      },
+      {
+        id: 'SUP-02',
+        orgName: 'Khalsa Langar & Aqua Relief',
+        contact: 'Gurpreet Singh',
+        phone: '+91-98111-22304',
+        category: 'Food & Water',
+        stock: 1500,
+        zone: 'Zone A — Yamuna Floodplain East',
+        readiness: 'Immediate (< 15 mins)',
+        details: 'Clean water pouches, ready meals, infant milk',
+        coords: { x: 24, y: 32 }
+      },
+      {
+        id: 'SUP-03',
+        orgName: 'NDRF Auxiliary Boat & Rescue',
+        contact: 'Cmdr. R.K. Verma',
+        phone: '+91-99102-88910',
+        category: 'Transport & Rescue',
+        stock: 35,
+        zone: 'Zone A — Yamuna Floodplain East',
+        readiness: 'Immediate (< 15 mins)',
+        details: 'Inflatable motorboats, life jackets, ropes',
+        coords: { x: 35, y: 22 }
+      },
+      {
+        id: 'SUP-04',
+        orgName: 'CareIndia Shelter & Warmth Hub',
+        contact: 'Ananya Deshmukh',
+        phone: '+91-98712-55409',
+        category: 'Shelter',
+        stock: 600,
+        zone: 'Zone C — Okhla Industrial South',
+        readiness: 'Standby (30 mins)',
+        details: 'Waterproof tents, thermal blankets, solar lamps',
+        coords: { x: 28, y: 74 }
+      }
+    ];
+
+    // Pre-loaded Active SOS Cases with AI Need Tags, Language Bridge Translations, and Case Timelines (#7)
+    let sosCases = [
+      {
+        id: 'SOS-101',
+        citizen: 'Ramesh & Family (14 People)',
+        zone: 'Zone A — Yamuna Floodplain East',
+        people: 14,
+        urgency: 'CRITICAL',
+        originalLang: 'Hindi (हिन्दी)',
+        rawMessage: 'यमुना का जलस्तर बढ़ गया है, 14 लोग छत पर फंसे हैं। 2 बुजुर्गों को सांस लेने में दिक्कत है और पीने का पानी खत्म हो गया है।',
+        translatedMessage: 'Yamuna water level has risen, 14 people are trapped on the roof. 2 elderly individuals have breathing difficulty and drinking water is exhausted.',
+        detectedNeeds: ['Transport & Rescue', 'Medical', 'Food & Water'],
+        vulnerableGroups: ['Elderly (2)', 'Trapped Civilians'],
+        status: 'MATCHED',
+        assignedSupplierId: 'SUP-03',
+        coords: { x: 22, y: 24 },
+        timestamp: '17:42 IST',
+        timeline: [
+          { step: '1. SOS Received & Geo-Tagged', time: '17:42 IST', detail: 'Distress beacon received from Zone A (28.6289° N, 77.2780° E).', done: true },
+          { step: '2. Language Bridge Translated', time: '17:42 IST', detail: 'Translated from Hindi (हिन्दी) to English Command Standard with 99.2% confidence.', done: true },
+          { step: '3. AI Need & Vulnerability Detected', time: '17:43 IST', detail: 'Flagged CRITICAL: Boat Rescue, Oxygen/Medical & Clean Water. 2 Elderly at risk.', done: true },
+          { step: '4. Smart Resource Matched', time: '17:45 IST', detail: 'Matched with NDRF Auxiliary Boat & Rescue (1.2 km away). Awaiting Supplier dispatch.', done: true },
+          { step: '5. Field Delivery & Verification', time: 'Pending', detail: 'Awaiting boat extraction confirmation.', done: false }
+        ]
+      },
+      {
+        id: 'SOS-102',
+        citizen: 'Fatima Begum Clinic Ward',
+        zone: 'Zone B — Karol Bagh Central',
+        people: 28,
+        urgency: 'CRITICAL',
+        originalLang: 'English',
+        rawMessage: 'Power outage after tremor at community clinic. Urgent need for insulin vials, trauma bandages, and clean water for 28 patients including 4 infants.',
+        translatedMessage: 'Power outage after tremor at community clinic. Urgent need for insulin vials, trauma bandages, and clean water for 28 patients including 4 infants.',
+        detectedNeeds: ['Medical', 'Food & Water'],
+        vulnerableGroups: ['Infants (4)', 'Medical Patients (28)'],
+        status: 'OPEN',
+        assignedSupplierId: null,
+        coords: { x: 74, y: 34 },
+        timestamp: '17:51 IST',
+        timeline: [
+          { step: '1. SOS Received & Geo-Tagged', time: '17:51 IST', detail: 'Distress signal logged from Karol Bagh Sector B.', done: true },
+          { step: '2. Language Bridge Verified', time: '17:51 IST', detail: 'Primary English verified; indexed for multi-agency relay.', done: true },
+          { step: '3. AI Need & Vulnerability Detected', time: '17:51 IST', detail: 'Flagged CRITICAL: Insulin/Medical & Water. 4 Infants detected.', done: true },
+          { step: '4. Smart Resource Matching', time: 'In Queue', detail: 'Ready for Coordinator one-click supplier dispatch.', done: false }
+        ]
+      },
+      {
+        id: 'SOS-103',
+        citizen: 'Okhla Phase-II Relief Camp',
+        zone: 'Zone C — Okhla Industrial South',
+        people: 65,
+        urgency: 'HIGH',
+        originalLang: 'Hindi (हिन्दी)',
+        rawMessage: '65 मजदूर परिवार खुले आसमान के नीचे हैं, रात के लिए टेंट, कंबल और बच्चों के लिए भोजन चाहिए।',
+        translatedMessage: '65 worker families are under open sky; need waterproof tents, blankets for the night, and food for children.',
+        detectedNeeds: ['Shelter', 'Food & Water'],
+        vulnerableGroups: ['Children / Families (65)'],
+        status: 'DISPATCHED',
+        assignedSupplierId: 'SUP-04',
+        coords: { x: 32, y: 68 },
+        timestamp: '17:15 IST',
+        timeline: [
+          { step: '1. SOS Received & Geo-Tagged', time: '17:15 IST', detail: 'Logged from Okhla Industrial South.', done: true },
+          { step: '2. Language Bridge Translated', time: '17:15 IST', detail: 'Translated from Hindi (हिन्दी) to English.', done: true },
+          { step: '3. AI Need Detected', time: '17:16 IST', detail: 'Flagged HIGH: Shelter Tents & Food Packets.', done: true },
+          { step: '4. Dispatched by Supplier', time: '17:28 IST', detail: 'CareIndia Shelter Hub dispatched 2 trucks (ETA 12 mins).', done: true }
+        ]
+      }
+    ];
+
+    // -------------------------------------------------------------------------
+    // 2. PANEL NAVIGATION & GLOBAL CONTROLS (#5 LANGUAGE BRIDGE, #6 LOW CONN)
+    // -------------------------------------------------------------------------
+    function switchPanel(panelName) {
+      currentPanel = panelName;
+      document.querySelectorAll('.panel-view').forEach(el => el.classList.add('hidden'));
+      document.getElementById(`panel-${panelName}`).classList.remove('hidden');
+
+      // Update Tab Styling
+      document.querySelectorAll('.panel-tab').forEach(btn => {
+        btn.classList.remove('bg-rose-600', 'bg-emerald-600', 'bg-indigo-600', 'text-white', 'shadow');
+        btn.classList.add('text-slate-400');
+      });
+
+      const activeBtn = document.getElementById(`tab-${panelName}`);
+      activeBtn.classList.remove('text-slate-400');
+      activeBtn.classList.add('text-white', 'shadow');
+      if (panelName === 'user') activeBtn.classList.add('bg-rose-600');
+      if (panelName === 'supplier') activeBtn.classList.add('bg-emerald-600');
+      if (panelName === 'coordinator') activeBtn.classList.add('bg-indigo-600');
+
+      renderAll();
+    }
+
+    // Feature #5: Language Bridge UI Switcher
+    function changeLanguage(lang) {
+      currentLang = lang;
+      const dict = i18n[lang] || i18n.en;
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (dict[key]) el.textContent = dict[key];
+      });
+      // Adjust RTL direction for Arabic
+      document.documentElement.dir = (lang === 'ar') ? 'rtl' : 'ltr';
+      showToast(`Language Bridge switched to ${lang.toUpperCase()}`, 'info');
+    }
+
+    // Feature #6: Low Connectivity Mode Toggle
+    function toggleLowConnectivity() {
+      lowConnectivity = !lowConnectivity;
+      document.body.classList.toggle('low-conn', lowConnectivity);
+      const banner = document.getElementById('low-conn-banner');
+      const btn = document.getElementById('low-conn-btn');
+      const label = document.getElementById('low-conn-label');
+      const icon = document.getElementById('low-conn-icon');
+
+      if (lowConnectivity) {
+        banner.classList.remove('hidden');
+        btn.classList.add('border-amber-500', 'bg-amber-500/10', 'text-amber-300');
+        label.textContent = 'Low-Data Mode';
+        icon.setAttribute('data-lucide', 'wifi-off');
+        icon.classList.replace('text-emerald-400', 'text-amber-400');
+        showToast('Low Connectivity Mode ON: Heavy graphics disabled, offline packet queue active.', 'warning');
+      } else {
+        banner.classList.add('hidden');
+        btn.classList.remove('border-amber-500', 'bg-amber-500/10', 'text-amber-300');
+        label.textContent = 'Normal Signal';
+        icon.setAttribute('data-lucide', 'wifi');
+        icon.classList.replace('text-amber-400', 'text-emerald-400');
+        showToast('Full Broadband Command Mode restored.', 'success');
+      }
+      lucide.createIcons();
+    }
+
+    // Custom Toast Message Box (No alert())
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const colors = {
+        success: 'bg-slate-900 border-emerald-500 text-emerald-200',
+        warning: 'bg-slate-900 border-amber-500 text-amber-200',
+        danger: 'bg-slate-900 border-rose-500 text-rose-200',
+        info: 'bg-slate-900 border-sky-500 text-sky-200'
+      };
+      toast.className = `pointer-events-auto border-l-4 ${colors[type] || colors.info} rounded-xl p-3.5 shadow-2xl text-xs font-medium flex items-center justify-between gap-3`;
+      toast.innerHTML = `<span>${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.remove();
+      }, 4200);
+    }
+
+    // -------------------------------------------------------------------------
+    // 3. FEATURE #1 (AI NEED DETECTOR) & FEATURE #5 (LANGUAGE BRIDGE) ENGINE
+    // -------------------------------------------------------------------------
+    function analyzeDistressText(text, urgencyOverride = 'HIGH') {
+      const lower = text.toLowerCase();
+      let detectedLang = 'English';
+      let translated = text;
+
+      // Detect Hindi / Devanagari or common Hinglish keywords
+      const hasDevanagari = /[\u0900-\u097F]/.test(text);
+      const hasArabic = /[\u0600-\u06FF]/.test(text);
+      const hasSpanish = /(ayuda|agua|heridos|niños|terremoto|inundación|médico)/i.test(text);
+
+      if (hasDevanagari) {
+        detectedLang = 'Hindi (हिन्दी) → English';
+        // Smart simulated translation for common crisis phrases
+        if (text.includes('बाढ़') || text.includes('पानी')) {
+          translated = '[AI Translated from Hindi]: Flood water has entered the house; elderly and young child are trapped; urgent need for clean drinking water and insulin/medical aid.';
+        } else if (text.includes('भूकंप') || text.includes('दबे')) {
+          translated = '[AI Translated from Hindi]: Building collapse after tremor; people trapped needing immediate rescue team and first aid.';
+        } else {
+          translated = `[AI Translated from Hindi]: Emergency distress reported — "${text}" (Auto-indexed for rescue, medical & water support).`;
+        }
+      } else if (hasArabic) {
+        detectedLang = 'Arabic (العربية) → English';
+        translated = `[AI Translated from Arabic]: Urgent civilian distress call requiring immediate medical, clean water, and shelter assistance.`;
+      } else if (hasSpanish) {
+        detectedLang = 'Spanish (Español) → English';
+        translated = `[AI Translated from Spanish]: Emergency crisis alert — urgent medical, clean water, and rescue support requested.`;
+      }
+
+      // Extract Resource Categories
+      const needs = new Set();
+      if (/(med|insulin|doctor|injur|bleed|oxygen|hospital|sick|दवा|इंसुलिन|अस्पताल|चोट|सांस|médico)/i.test(text)) {
+        needs.add('Medical');
+      }
+      if (/(water|food|hungry|thirst|milk|ration|पानी|भोजन|खाना|दूध|agua)/i.test(text)) {
+        needs.add('Food & Water');
+      }
+      if (/(tent|shelter|blanket|cold|roof|homeless|टेंट|कंबल|छत|आश्रय)/i.test(text)) {
+        needs.add('Shelter');
+      }
+      if (/(trap|flood|boat|rescue|collapse|fire|earthquake|बाढ़|फंसा|बचाव|भूकंप|ayuda|inundación)/i.test(text)) {
+        needs.add('Transport & Rescue');
+      }
+      if (needs.size === 0) needs.add('Food & Water');
+
+      // Extract Vulnerable Groups
+      const vulnerable = [];
+      if (/(elder|old|senior|grandma|grandpa|बुजुर्ग|दादा|दादी)/i.test(text)) vulnerable.push('Elderly Citizens');
+      if (/(infant|baby|child|kid|pregnant|बच्चा|बच्चे|शिशु|गर्भवती|niños)/i.test(text)) vulnerable.push('Infants / Children');
+      if (/(injur|bleed|unconscious|critical|disabled|घायल|बेहोश|heridos)/i.test(text)) vulnerable.push('Injured / Critical');
+
+      // Determine Severity
+      let severity = urgencyOverride;
+      if (vulnerable.length >= 2 || /(critical|trapped|insulin|bleed|फंसा|इंसुलिन|बाढ़)/i.test(text)) {
+        severity = 'CRITICAL';
+      }
+
+      return {
+        detectedLang,
+        translated,
+        needs: Array.from(needs),
+        vulnerable,
+        severity
+      };
+    }
+
+    function runLiveAINeedDetector() {
+      const msg = document.getElementById('sos-message').value.trim();
+      const urg = document.getElementById('sos-urgency').value;
+      const badge = document.getElementById('ai-severity-badge');
+      const langEl = document.getElementById('ai-detected-lang');
+      const transEl = document.getElementById('ai-translated-text');
+      const tagsEl = document.getElementById('ai-extracted-tags');
+      const vulnEl = document.getElementById('ai-vulnerable-tags');
+
+      if (!msg) {
+        badge.textContent = 'STANDBY';
+        badge.className = 'px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-slate-800 text-slate-400';
+        langEl.textContent = 'Auto-Detect';
+        transEl.textContent = 'Start typing an emergency message on the left to see real-time command translation and resource extraction...';
+        tagsEl.innerHTML = '<span class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-400 text-xs">Awaiting input...</span>';
+        vulnEl.innerHTML = '<span class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-400 text-xs">None flagged yet</span>';
+        return;
+      }
+
+      const analysis = analyzeDistressText(msg, urg);
+      badge.textContent = `${analysis.severity} PRIORITY`;
+      badge.className = analysis.severity === 'CRITICAL'
+        ? 'px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40'
+        : 'px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40';
+
+      langEl.textContent = analysis.detectedLang;
+      transEl.textContent = analysis.translated;
+
+      tagsEl.innerHTML = analysis.needs.map(n => `
+        <span class="px-2.5 py-1 rounded-lg bg-sky-500/15 text-sky-300 border border-sky-500/30 text-xs font-semibold flex items-center gap-1">
+          <i data-lucide="check-circle-2" class="w-3 h-3"></i> ${n}
+        </span>
+      `).join('');
+
+      vulnEl.innerHTML = analysis.vulnerable.length > 0
+        ? analysis.vulnerable.map(v => `
+            <span class="px-2.5 py-1 rounded-lg bg-rose-500/15 text-rose-300 border border-rose-500/30 text-xs font-semibold flex items-center gap-1">
+              <i data-lucide="heart-pulse" class="w-3 h-3"></i> ${v}
+            </span>
+          `).join('')
+        : '<span class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-400 text-xs">Standard civilian group</span>';
+
+      lucide.createIcons();
+    }
+
+    function fillSampleSOS() {
+      document.getElementById('sos-name').value = 'Sunita Devi & Family';
+      document.getElementById('sos-zone').value = 'Zone A — Yamuna Floodplain East';
+      document.getElementById('sos-people').value = 9;
+      document.getElementById('sos-urgency').value = 'CRITICAL';
+      document.getElementById('sos-message').value = 'बाढ़ का पानी घर में घुस गया है, 2 बुजुर्ग और एक छोटा बच्चा फंसा है, पीने का पानी और इंसुलिन चाहिए';
+      runLiveAINeedDetector();
+      showToast('Loaded Hindi flood distress sample — AI Need Detector parsed entities!', 'info');
+    }
+
+    function detectGPS() {
+      const lat = (28.55 + Math.random() * 0.15).toFixed(4);
+      const lng = (77.15 + Math.random() * 0.18).toFixed(4);
+      document.getElementById('user-gps-coords').textContent = `${lat}° N, ${lng}° E`;
+      showToast(`GPS Telemetry locked: ${lat}° N, ${lng}° E`, 'success');
+    }
+
+    // -------------------------------------------------------------------------
+    // 4. USER SOS SUBMISSION HANDLER -> UPDATES COORDINATOR & MATCHER LIVE
+    // -------------------------------------------------------------------------
+    function handleSOSSubmit(e) {
+      e.preventDefault();
+      const name = document.getElementById('sos-name').value.trim();
+      const zone = document.getElementById('sos-zone').value;
+      const people = parseInt(document.getElementById('sos-people').value, 10) || 1;
+      const urgency = document.getElementById('sos-urgency').value;
+      const rawMessage = document.getElementById('sos-message').value.trim();
+
+      const ai = analyzeDistressText(rawMessage, urgency);
+      const newId = `SOS-${101 + sosCases.length}`;
+      const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' IST';
+
+      // Position pin inside appropriate tactical sector
+      const zoneCoords = {
+        'Zone A — Yamuna Floodplain East': { x: 18 + Math.random() * 22, y: 18 + Math.random() * 22 },
+        'Zone B — Karol Bagh Central': { x: 58 + Math.random() * 25, y: 18 + Math.random() * 22 },
+        'Zone C — Okhla Industrial South': { x: 18 + Math.random() * 22, y: 58 + Math.random() * 22 },
+        'Zone D — Rohini Sector 14 North': { x: 58 + Math.random() * 25, y: 58 + Math.random() * 22 }
+      };
+
+      const newCase = {
+        id: newId,
+        citizen: `${name} (${people} People)`,
+        zone,
+        people,
+        urgency: ai.severity,
+        originalLang: ai.detectedLang.split(' ')[0],
+        rawMessage,
+        translatedMessage: ai.translated,
+        detectedNeeds: ai.needs,
+        vulnerableGroups: ai.vulnerable.length ? ai.vulnerable : ['General Civilians'],
+        status: 'OPEN',
+        assignedSupplierId: null,
+        coords: zoneCoords[zone] || { x: 45, y: 45 },
+        timestamp: nowTime,
+        timeline: [
+          { step: '1. SOS Received & Geo-Tagged', time: nowTime, detail: `Broadcast received from ${zone}.`, done: true },
+          { step: '2. Language Bridge Processed', time: nowTime, detail: `${ai.detectedLang} normalized for Command.`, done: true },
+          { step: '3. AI Need Detector Tagged', time: nowTime, detail: `Needs: ${ai.needs.join(', ')} | Priority: ${ai.severity}.`, done: true },
+          { step: '4. Smart Resource Matching', time: 'Active', detail: 'AI Matcher evaluating nearest verified suppliers.', done: false }
+        ]
+      };
+
+      sosCases.unshift(newCase);
+      selectedCaseId = newId;
+
+      document.getElementById('sos-form').reset();
+      runLiveAINeedDetector();
+      renderAll();
+
+      showToast(`🚨 ${newId} Broadcasted! AI Need Detector & Coordinator Matcher updated.`, 'danger');
+    }
+
+    // -------------------------------------------------------------------------
+    // 5. SUPPLIER REGISTRATION FORM HANDLER -> ADDS TO LIVE DIRECTORY & AI MATCHER
+    // -------------------------------------------------------------------------
+    function handleSupplierRegister(e) {
+      e.preventDefault();
+      const orgName = document.getElementById('sup-org-name').value.trim();
+      const contact = document.getElementById('sup-contact').value.trim();
+      const phone = document.getElementById('sup-phone').value.trim();
+      const category = document.getElementById('sup-category').value;
+      const stock = parseInt(document.getElementById('sup-stock').value, 10) || 100;
+      const zone = document.getElementById('sup-zone').value;
+      const readiness = document.getElementById('sup-readiness').value;
+      const details = document.getElementById('sup-details').value.trim() || `${category} emergency relief packages`;
+
+      const zoneCoords = {
+        'Zone A — Yamuna Floodplain East': { x: 30 + Math.random() * 12, y: 30 + Math.random() * 12 },
+        'Zone B — Karol Bagh Central': { x: 68 + Math.random() * 15, y: 30 + Math.random() * 12 },
+        'Zone C — Okhla Industrial South': { x: 30 + Math.random() * 12, y: 68 + Math.random() * 12 },
+        'Zone D — Rohini Sector 14 North': { x: 68 + Math.random() * 15, y: 68 + Math.random() * 12 }
+      };
+
+      const newSupplier = {
+        id: `SUP-0${suppliers.length + 1}`,
+        orgName,
+        contact,
+        phone,
+        category,
+        stock,
+        zone,
+        readiness,
+        details,
+        coords: zoneCoords[zone] || { x: 50, y: 50 }
+      };
+
+      suppliers.unshift(newSupplier);
+      document.getElementById('supplier-reg-form').reset();
+      renderAll();
+
+      showToast(`✅ ${orgName} registered! Live in AI Smart Resource Matcher & Unmet Need Grid.`, 'success');
+    }
+
+    // Supplier Accepts & Dispatches Assigned Order
+    function acceptAndDispatchOrder(caseId) {
+      const targetCase = sosCases.find(c => c.id === caseId);
+      if (!targetCase) return;
+      const sup = suppliers.find(s => s.id === targetCase.assignedSupplierId);
+      const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' IST';
+
+      targetCase.status = 'DISPATCHED';
+      if (sup && sup.stock >= targetCase.people) {
+        sup.stock -= targetCase.people;
+      }
+
+      targetCase.timeline.forEach(t => {
+        if (t.step.startsWith('4.')) t.done = true;
+      });
+      targetCase.timeline.push({
+        step: '5. En Route — Supplier Dispatched',
+        time: nowTime,
+        detail: `${sup ? sup.orgName : 'Relief Unit'} confirmed dispatch with live GPS tracking.`,
+        done: true
+      });
+
+      renderAll();
+      showToast(`🚚 Dispatch confirmed for ${caseId}! Timeline & citizen beacon updated.`, 'success');
+    }
+
+    // -------------------------------------------------------------------------
+    // 6. COORDINATOR ACTIONS: SMART MATCHER (#3), UNMET NEEDS (#2), TIMELINE (#7)
+    // -------------------------------------------------------------------------
+    function selectCase(caseId) {
+      selectedCaseId = caseId;
+      renderCoordinatorPanel();
+    }
+
+    function approveSmartMatch(caseId, supplierId) {
+      const targetCase = sosCases.find(c => c.id === caseId);
+      const sup = suppliers.find(s => s.id === supplierId);
+      if (!targetCase || !sup) return;
+
+      const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' IST';
+      targetCase.assignedSupplierId = supplierId;
+      targetCase.status = 'MATCHED';
+
+      targetCase.timeline.push({
+        step: '4. Coordinator Approved AI Match',
+        time: nowTime,
+        detail: `Assigned ${sup.orgName} (${sup.category}) to ${targetCase.id}. Sent to Supplier Dispatch Queue.`,
+        done: true
+      });
+
+      renderAll();
+      showToast(`🤝 Matched ${targetCase.id} with ${sup.orgName}! Order sent to Supplier Panel.`, 'info');
+    }
+
+    function handleAddTimelineNote(e) {
+      e.preventDefault();
+      const input = document.getElementById('timeline-note-input');
+      const note = input.value.trim();
+      if (!note) return;
+
+      const targetCase = sosCases.find(c => c.id === selectedCaseId);
+      if (!targetCase) return;
+
+      const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' IST';
+      targetCase.timeline.push({
+        step: `Field Update #${targetCase.timeline.length + 1}`,
+        time: nowTime,
+        detail: note,
+        done: true
+      });
+
+      if (/(deliver|rescued|safe|complete|reached)/i.test(note)) {
+        targetCase.status = 'RESOLVED';
+      }
+
+      input.value = '';
+      renderAll();
+      showToast(`Timeline updated for ${targetCase.id}`, 'success');
+    }
+
+    function escalateAllUnmet() {
+      showToast('📢 Emergency Surge Alert broadcasted to all standby NGOs & neighboring NCR districts!', 'warning');
+    }
+
+    // -------------------------------------------------------------------------
+    // 7. DYNAMIC RENDERING FUNCTIONS FOR ALL 3 PANELS
+    // -------------------------------------------------------------------------
+    function renderAll() {
+      renderUserTracker();
+      renderSupplierPanel();
+      renderCoordinatorPanel();
+      lucide.createIcons();
+    }
+
+    function renderUserTracker() {
+      const list = document.getElementById('user-sos-tracker-list');
+      document.getElementById('user-sos-count').textContent = `${sosCases.length} Active`;
+
+      list.innerHTML = sosCases.map(c => {
+        const statusColors = {
+          OPEN: 'bg-rose-500/20 text-rose-300 border-rose-500/30',
+          MATCHED: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
+          DISPATCHED: 'bg-sky-500/20 text-sky-300 border-sky-500/30',
+          RESOLVED: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+        };
+        const sup = suppliers.find(s => s.id === c.assignedSupplierId);
+        return `
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 space-y-2">
+            <div class="flex items-center justify-between gap-2">
+              <span class="font-mono text-xs font-bold text-white">${c.id} • ${c.zone.split('—')[0]}</span>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold border ${statusColors[c.status] || statusColors.OPEN}">
+                ${c.status}
+              </span>
+            </div>
+            <p class="text-xs text-slate-300 line-clamp-2">${c.translatedMessage}</p>
+            <div class="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-900 text-[11px] text-slate-400">
+              <span>Needs: <strong class="text-sky-300">${c.detectedNeeds.join(', ')}</strong></span>
+              <span>${sup ? `Unit: <strong class="text-emerald-400">${sup.orgName}</strong>` : 'AI Matching...'}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderSupplierPanel() {
+      document.getElementById('supplier-total-count').textContent = suppliers.length;
+
+      // Assigned dispatch orders (MATCHED or DISPATCHED)
+      const assignedCases = sosCases.filter(c => c.assignedSupplierId);
+      const pendingCount = assignedCases.filter(c => c.status === 'MATCHED').length;
+      document.getElementById('supplier-pending-orders').textContent = pendingCount;
+
+      const dispatchList = document.getElementById('supplier-dispatch-list');
+      if (assignedCases.length === 0) {
+        dispatchList.innerHTML = `<p class="text-xs text-slate-400">No active dispatch orders assigned yet.</p>`;
+      } else {
+        dispatchList.innerHTML = assignedCases.map(c => {
+          const sup = suppliers.find(s => s.id === c.assignedSupplierId);
+          const isDispatched = c.status === 'DISPATCHED' || c.status === 'RESOLVED';
+          return `
+            <div class="bg-slate-950 border ${isDispatched ? 'border-emerald-500/30' : 'border-amber-500/40'} rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div class="space-y-1">
+                <div class="flex items-center gap-2">
+                  <span class="font-mono text-xs font-bold text-rose-400">${c.id}</span>
+                  <span class="text-xs font-semibold text-white">${c.citizen}</span>
+                  <span class="px-2 py-0.5 rounded bg-slate-800 text-[10px] font-mono text-slate-300">${c.zone.split('—')[0]}</span>
+                </div>
+                <p class="text-xs text-slate-300">${c.translatedMessage}</p>
+                <p class="text-[11px] text-emerald-400">Assigned Hub: <strong>${sup ? sup.orgName : 'Verified Supplier'}</strong> (${c.detectedNeeds.join(', ')})</p>
+              </div>
+              <div class="shrink-0">
+                ${isDispatched
+                  ? `<span class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-xs font-bold">
+                      <i data-lucide="check-circle" class="w-4 h-4"></i> Dispatched
+                    </span>`
+                  : `<button onclick="acceptAndDispatchOrder('${c.id}')" class="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition">
+                      <i data-lucide="truck" class="w-4 h-4"></i> Accept & Dispatch
+                    </button>`
+                }
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Directory Grid
+      const dirList = document.getElementById('supplier-directory-list');
+      dirList.innerHTML = suppliers.map(s => `
+        <div class="bg-slate-950 border border-slate-800 hover:border-emerald-500/40 rounded-xl p-3.5 space-y-2 transition">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <span class="text-[10px] font-mono text-emerald-400 font-bold">${s.id} • ${s.category.toUpperCase()}</span>
+              <h4 class="text-sm font-bold text-white leading-snug">${s.orgName}</h4>
+            </div>
+            <span class="px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-300 font-mono text-xs font-bold shrink-0">
+              ${s.stock} units
+            </span>
+          </div>
+          <p class="text-xs text-slate-400">${s.details}</p>
+          <div class="pt-2 border-t border-slate-900 flex items-center justify-between text-[11px] text-slate-400">
+            <span><i data-lucide="map-pin" class="w-3 h-3 inline text-sky-400"></i> ${s.zone.split('—')[0]}</span>
+            <span class="text-emerald-400">${s.readiness}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderCoordinatorPanel() {
+      // KPIs
+      document.getElementById('kpi-active-sos').textContent = sosCases.length;
+      document.getElementById('kpi-suppliers').textContent = suppliers.length;
+
+      // 1. Tactical Map Pins (#4)
+      const pinsLayer = document.getElementById('tactical-pins-layer');
+      if (pinsLayer) {
+        const sosPins = sosCases.map(c => `
+          <button onclick="selectCase('${c.id}')" style="left: ${c.coords.x}%; top: ${c.coords.y}%;"
+            class="absolute -translate-x-1/2 -translate-y-1/2 group flex flex-col items-center focus:outline-none z-20">
+            <span class="px-1.5 py-0.5 rounded bg-slate-950/90 border ${c.id === selectedCaseId ? 'border-white text-white' : 'border-rose-500/50 text-rose-300'} text-[9px] font-mono font-bold mb-1 whitespace-nowrap">
+              ${c.id} (${c.people}p)
+            </span>
+            <span class="w-4 h-4 rounded-full ${c.id === selectedCaseId ? 'bg-white ring-4 ring-rose-500' : 'bg-rose-500'} shadow-lg"></span>
+          </button>
+        `).join('');
+
+        const supPins = suppliers.map(s => `
+          <div style="left: ${s.coords.x}%; top: ${s.coords.y}%;"
+            class="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center pointer-events-none z-10">
+            <span class="w-3.5 h-3.5 rounded-sm bg-emerald-400 border border-slate-950 shadow"></span>
+            <span class="text-[9px] font-mono text-emerald-300 bg-slate-950/80 px-1 rounded mt-0.5 whitespace-nowrap">${s.id}</span>
+          </div>
+        `).join('');
+
+        pinsLayer.innerHTML = sosPins + supPins;
+      }
+
+      // 2. Live Distress Queue List
+      const sosList = document.getElementById('coordinator-sos-list');
+      sosList.innerHTML = sosCases.map(c => {
+        const isSelected = c.id === selectedCaseId;
+        return `
+          <div onclick="selectCase('${c.id}')" class="cursor-pointer rounded-xl p-3.5 border transition ${isSelected ? 'bg-indigo-950/40 border-indigo-500' : 'bg-slate-950 border-slate-800 hover:border-slate-700'}">
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold ${c.urgency === 'CRITICAL' ? 'bg-rose-500/20 text-rose-300' : 'bg-amber-500/20 text-amber-300'}">
+                  ${c.urgency}
+                </span>
+                <span class="font-mono text-xs font-bold text-white">${c.id}</span>
+                <span class="text-xs font-semibold text-slate-300">${c.citizen}</span>
+              </div>
+              <span class="text-[11px] font-mono text-slate-400">${c.timestamp}</span>
+            </div>
+            <p class="text-xs text-slate-300 mt-1.5">${c.translatedMessage}</p>
+            <div class="flex flex-wrap items-center justify-between gap-2 mt-2 pt-2 border-t border-slate-800/80 text-[11px]">
+              <div class="flex flex-wrap gap-1.5">
+                ${c.detectedNeeds.map(n => `<span class="px-2 py-0.5 rounded bg-sky-500/10 text-sky-300 border border-sky-500/20">${n}</span>`).join('')}
+              </div>
+              <span class="font-mono font-semibold ${c.status === 'OPEN' ? 'text-rose-400' : 'text-emerald-400'}">Status: ${c.status}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // 3. Feature #2: Unmet Need Detector (Dynamic supply vs demand gap analysis)
+      const categories = ['Medical', 'Food & Water', 'Shelter', 'Transport & Rescue'];
+      const unmetGaps = [];
+
+      categories.forEach(cat => {
+        const totalDemand = sosCases
+          .filter(c => c.status !== 'RESOLVED' && c.detectedNeeds.includes(cat))
+          .reduce((acc, c) => acc + c.people * 4, 0);
+        const totalSupply = suppliers
+          .filter(s => s.category === cat)
+          .reduce((acc, s) => acc + s.stock, 0);
+
+        if (totalDemand > 0) {
+          const deficitRatio = totalSupply === 0 ? 100 : Math.max(0, Math.min(96, Math.round(((totalDemand - totalSupply * 0.25) / totalDemand) * 100)));
+          if (deficitRatio > 25 || totalSupply < 100) {
+            unmetGaps.push({
+              category: cat,
+              deficitPct: Math.max(42, deficitRatio),
+              demandUnits: totalDemand,
+              supplyUnits: totalSupply,
+              zoneAlert: cat === 'Transport & Rescue' ? 'Zone A — Yamuna Floodplain' : (cat === 'Medical' ? 'Zone B — Karol Bagh' : 'Zone D — Rohini North')
+            });
+          }
+        }
+      });
+
+      document.getElementById('kpi-unmet-gaps').textContent = unmetGaps.length;
+      const unmetContainer = document.getElementById('unmet-needs-list');
+      unmetContainer.innerHTML = unmetGaps.map(g => `
+        <div class="bg-slate-950 border border-amber-500/30 rounded-xl p-3.5 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-white flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+              ${g.zoneAlert}: ${g.category} Deficit
+            </span>
+            <span class="font-mono text-xs font-extrabold text-rose-400">${g.deficitPct}% UNMET</span>
+          </div>
+          <div class="w-full h-2 bg-slate-900 rounded-full overflow-hidden">
+            <div class="h-full bg-gradient-to-r from-amber-500 to-rose-500" style="width: ${g.deficitPct}%"></div>
+          </div>
+          <div class="flex items-center justify-between text-[11px] text-slate-400">
+            <span>Est. Need: <strong class="text-slate-200">${g.demandUnits} units</strong></span>
+            <span>Available Stock: <strong class="text-emerald-400">${g.supplyUnits} units</strong></span>
+          </div>
+        </div>
+      `).join('');
+
+      // 4. Feature #3: Smart Resource Matcher for Selected Case
+      const activeCase = sosCases.find(c => c.id === selectedCaseId) || sosCases[0];
+      document.getElementById('matcher-selected-case-badge').textContent = `Target: ${activeCase.id}`;
+
+      const rankedSuppliers = suppliers.map(s => {
+        let score = 55;
+        if (activeCase.detectedNeeds.includes(s.category)) score += 30;
+        if (s.zone === activeCase.zone) score += 12;
+        if (s.stock >= activeCase.people) score += 2;
+        score = Math.min(99, score);
+        const distanceKm = (s.zone === activeCase.zone) ? (1.1 + (s.stock % 9) * 0.2).toFixed(1) : (4.8 + (s.stock % 7) * 0.6).toFixed(1);
+        return { ...s, matchScore: score, distanceKm };
+      }).sort((a, b) => b.matchScore - a.matchScore);
+
+      const matcherEl = document.getElementById('smart-matcher-results');
+      matcherEl.innerHTML = rankedSuppliers.slice(0, 3).map(s => {
+        const isAssigned = activeCase.assignedSupplierId === s.id;
+        return `
+          <div class="bg-slate-950 border ${isAssigned ? 'border-emerald-500/50' : 'border-slate-800'} rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="space-y-1">
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-mono text-[11px] font-bold">
+                  ${s.matchScore}% AI FIT
+                </span>
+                <h4 class="text-sm font-bold text-white">${s.orgName}</h4>
+              </div>
+              <p class="text-xs text-slate-400">
+                Category: <strong class="text-slate-200">${s.category}</strong> • Stock: <strong class="text-emerald-400">${s.stock}</strong> • Distance: <strong class="text-sky-400">${s.distanceKm} km</strong>
+              </p>
+            </div>
+            <button onclick="approveSmartMatch('${activeCase.id}', '${s.id}')"
+              class="px-3.5 py-2 rounded-xl text-xs font-bold shrink-0 transition ${isAssigned ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'bg-indigo-600 hover:bg-indigo-500 text-white'}">
+              ${isAssigned ? '✓ Matched & Assigned' : 'Approve & Dispatch'}
+            </button>
+          </div>
+        `;
+      }).join('');
+
+      // 5. Feature #7: Case Timeline & Audit Trail
+      document.getElementById('timeline-case-status').textContent = `${activeCase.id} • ${activeCase.status}`;
+      const timelineEl = document.getElementById('case-timeline-container');
+      timelineEl.innerHTML = activeCase.timeline.map((item, idx) => `
+        <div class="relative pl-6 pb-2 border-l-2 ${item.done ? 'border-emerald-500' : 'border-slate-800'}">
+          <span class="absolute -left-[7px] top-0.5 w-3 h-3 rounded-full ${item.done ? 'bg-emerald-400 ring-4 ring-emerald-500/20' : 'bg-slate-700'}"></span>
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-xs font-bold ${item.done ? 'text-white' : 'text-slate-400'}">${item.step}</span>
+            <span class="text-[10px] font-mono text-slate-400">${item.time}</span>
+          </div>
+          <p class="text-xs text-slate-400 mt-0.5">${item.detail}</p>
+        </div>
+      `).join('');
+    }
+
+    // Initialize App on Load
+    window.addEventListener('DOMContentLoaded', () => {
+      renderAll();
+    });
+  </script>
+</body>
+</html>
